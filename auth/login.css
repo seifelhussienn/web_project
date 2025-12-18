@@ -1,0 +1,76 @@
+/* Center the entire login card on the screen */
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #6a8dff, #8f6bff);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+/* Center content inside the card */
+.login-card {
+    background: #ffffff;
+    padding: 35px 30px;
+    border-radius: 14px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    animation: fadeIn 0.6s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Center heading */
+.login-card h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #444;
+    font-weight: 600;
+}
+
+/* Form layout */
+.login-card form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Inputs */
+.login-card input {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    transition: 0.2s;
+}
+
+/* Button */
+.login-card button {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px;
+    background: #6a8dff;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+/* Error message */
+.error {
+    background: #ffdddd;
+    color: #c00;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 14px;
+    width: 100%;
+    max-width: 300px;
+}
