@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Task Manager Dashboard (Vanilla JS)</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#fff; --text:#17202a; --muted:#556; --accent:#4f46e5;
+      --high:#ef4444; --med:#f59e0b; --low:#10b981;
+    }
+    [data-theme='dark']{
+      --bg:#0b1220; --card:#0f1724; --text:#e6eef8; --muted:#9fb0c8; --accent:#7c3aed;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); margin:0; padding:24px;}
+    .app{max-width:980px;margin:0 auto}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    header h1{margin:0;font-size:20px}
+    .controls{display:flex;gap:8px;align-items:center}
+    .btn{background:var(--card);border:1px solid rgba(0,0,0,0.06);padding:8px 12px;border-radius:8px;cursor:pointer}
+    .btn.secondary{background:transparent;border:1px solid rgba(0,0,0,0.06)}
+    .card{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.06);}
+    form.grid{display:grid;grid-template-columns:1fr 200px;gap:12px;align-items:start}
+    form .full{grid-column:1/-1}
+    input, textarea, select{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);background:transparent;color:var(--text)}
+    textarea{min-height:64px}
+    .task-list{margin-top:14px;display:grid;gap:10px}
+    .task{display:flex;gap:12px;align-items:flex-start;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.04);}
+    .task .meta{flex:1}
+    .task h3{margin:0;font-size:16px}
+    .task p{margin:6px 0 0;color:var(--muted)}
+    .badge{padding:6px 8px;border-radius:999px;font-weight:600;font-size:12px}
+    .badge.high{background:rgba(239,68,68,0.12);color:var(--high);}
+    .badge.medium{background:rgba(245,158,11,0.12);color:var(--med)}
+    .badge.low{background:rgba(16,185,129,0.12);color:var(--low)}
+    .task .actions{display:flex;gap:8px;align-items:center}
+    .small{font-size:13px;padding:6px 8px}
+    .filters{display:flex;gap:6px}
+    .empty{padding:28px;text-align:center;color:var(--muted)}
+    /* assignment screenshot */
+    .screenshot{max-width:100%;border-radius:8px;margin-bottom:12px}
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+    /* responsive */
+    @media (max-width:700px){form.grid{grid-template-columns:1fr} .controls{flex-direction:column;align-items:flex-end}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Task Manager Dashboard</h1>
+        <div style="margin-top:8px;color:var(--muted);font-size:13px">Vanilla JavaScript • DOM manipulation • localStorage • inline edit</div>
+      </div>
+      <div class="controls">
+        <div class="filters" aria-label="priority filter">
+          <button class="btn small" data-filter="all">All</button>
+          <button class="btn small" data-filter="High">High</button>
+          <button class="btn small" data-filter="Medium">Medium</button>
+          <button class="btn small" data-filter="Low">Low</button>
+        </div>
+        <button id="themeToggle" class="btn">Toggle Theme</button>
+      </div>
+    </header>
+
+    <img class="screenshot" src="/mnt/data/ce5e279c-57db-4f03-b4e9-1624c8ae5503.png" alt="assignment screenshot">
+
+    <section class="card" aria-labelledby="addTaskTitle">
+      <h2 id="addTaskTitle">Add Task</h2>
+      <form id="taskForm" class="grid" autocomplete="off">
+        <input id="title" placeholder="Title (required)" required />
+        <select id="priority" title="Priority">
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
+          <option value="Low">Low</option>
+        </select>
+        <textarea id="description" class="full" placeholder="Description"></textarea>
+        <div class="full" style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="reset" class="btn secondary">Clear</button>
+          <button type="submit" class="btn">Add Task</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" style="margin-top:12px">
+      <h2 style="margin-top:0">Tasks</h2>
+      <div id="tasks" class="task-list" aria-live="polite"></div>
+      <div id="empty" class="empty" hidden>No tasks yet — add one!</div>
+    </section>
+
+    <footer>Features: add, inline edit (click title/desc/priority), delete with confirmation, filter by priority, dark/light theme, persistence via localStorage.</footer>
+  </div>
+
+  <script>
+    /* Simple Task Manager - Vanilla JS */
+    const STORAGE_KEY = 'taskManager.tasks.v1';
+    const THEME_KEY = 'taskManager.theme.v1';
+
+    // state
+    let tasks = [];
+    let filter = 'all';
+
+    // elements
+    const taskForm = document.getElementById('taskForm');
+    const titleInput = document.getElementById('title');
+    const descInput = document.getElementById('description');
+    const priorityInput = document.getElementById('priority');
+    const tasksEl = document.getElementById('tasks');
+    const emptyEl = document.getElementById('empty');
+    const themeToggle = document.getElementById('themeToggle');
+
+    // init
+    (function init(){
+      // load theme
+      const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme === 'dark' ? 'dark' : '');
+      themeToggle.textContent = savedTheme === 'dark' ? 'Light' : 'Dark';
+
+      // load tasks
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        tasks = raw ? JSON.parse(raw) : [];
+      }catch(e){ tasks = [] }
+      render();
+
+      // attach listeners
+      taskForm.addEventListener('submit', onAdd);
+      document.querySelectorAll('[data-filter]').forEach(btn=>btn.addEventListener('click', onFilterClick));
+      themeToggle.addEventListener('click', toggleTheme);
+
+      // keyboard: quick new task on Enter in title
+      titleInput.addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); taskForm.requestSubmit(); } });
+    })();
+
+    function save(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+
+    function onAdd(e){
+      e.preventDefault();
+      const t = titleInput.value.trim();
+      if(!t) return titleInput.focus();
+      const task = {id:Date.now().toString(), title:t, description:descInput.value.trim(), priority: priorityInput.value || 'Medium', created:Date.now() };
+      tasks.unshift(task);
+      save();
+      taskForm.reset();
+      titleInput.focus();
+      render();
+    }
+
+    function onFilterClick(e){
+      const btn = e.currentTarget;
+      const f = btn.getAttribute('data-filter');
+      filter = f === 'all' ? 'all' : f;
+      document.querySelectorAll('[data-filter]').forEach(b=>b.disabled=false);
+      btn.disabled = true;
+      render();
+    }
+
+    function toggleTheme(){
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+      themeToggle.textContent = isDark ? 'Dark' : 'Light';
+      localStorage.setItem(THEME_KEY, isDark ? 'light' : 'dark');
+    }
+
+    // render tasks list
+    function render(){
+      tasksEl.innerHTML = '';
+      const visible = tasks.filter(t=> filter === 'all' ? true : t.priority === filter);
+      if(visible.length === 0){ emptyEl.hidden = false; return }
+      emptyEl.hidden = true;
+      for(const t of visible){
+        const item = document.createElement('div'); item.className = 'task';
+
+        const meta = document.createElement('div'); meta.className = 'meta';
+        const title = document.createElement('h3'); title.textContent = t.title; title.tabIndex = 0; title.title = 'Click to edit'; title.style.cursor='text';
+        title.contentEditable = true; // inline edit for title
+        title.addEventListener('input', debounce(e=>{ t.title = title.textContent.trim() || 'Untitled'; save(); }, 400));
+        title.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); title.blur(); } });
+
+        const desc = document.createElement('p'); desc.textContent = t.description || '—'; desc.tabIndex=0; desc.title='Click to edit'; desc.contentEditable = true;
+        desc.addEventListener('input', debounce(e=>{ t.description = desc.textContent.trim(); save(); },400));
+        desc.addEventListener('keydown', e=>{ if(e.key==='Enter' && e.shiftKey===false){ e.preventDefault(); desc.blur(); } });
+
+        const metaBottom = document.createElement('div'); metaBottom.style.display='flex'; metaBottom.style.justifyContent='space-between'; metaBottom.style.alignItems='center'; metaBottom.style.marginTop='8px';
+
+        // priority chooser (inline)
+        const prioWrap = document.createElement('div'); prioWrap.style.display='flex'; prioWrap.style.alignItems='center'; prioWrap.style.gap='8px';
+        const prioLabel = document.createElement('span'); prioLabel.className = 'badge '+ (t.priority==='High'?'high': t.priority==='Low'?'low':'medium'); prioLabel.textContent = t.priority;
+        prioLabel.title = 'Click to change priority'; prioLabel.tabIndex=0; prioLabel.style.cursor='pointer';
+        // clicking cycles priority
+        prioLabel.addEventListener('click', ()=>{ t.priority = cyclePriority(t.priority); prioLabel.textContent = t.priority; prioLabel.className = 'badge '+ (t.priority==='High'?'high': t.priority==='Low'?'low':'medium'); save(); render(); });
+        prioLabel.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); prioLabel.click(); } });
+
+        prioWrap.appendChild(prioLabel);
+
+        metaBottom.appendChild(prioWrap);
+
+        // actions
+        const actions = document.createElement('div'); actions.className='actions';
+        const del = document.createElement('button'); del.className='btn small'; del.textContent='Delete';
+        del.addEventListener('click', ()=>onDelete(t.id));
+        const up = document.createElement('button'); up.className='btn small'; up.textContent='↑'; up.title='Move up'; up.addEventListener('click', ()=>moveTask(t.id, -1));
+        const down = document.createElement('button'); down.className='btn small'; down.textContent='↓'; down.title='Move down'; down.addEventListener('click', ()=>moveTask(t.id, +1));
+
+        actions.appendChild(up); actions.appendChild(down); actions.appendChild(del);
+        metaBottom.appendChild(actions);
+
+        meta.appendChild(title); meta.appendChild(desc); meta.appendChild(metaBottom);
+        item.appendChild(meta);
+        tasksEl.appendChild(item);
+      }
+    }
+
+    function onDelete(id){
+      const t = tasks.find(x=>x.id===id);
+      if(!t) return;
+      const ok = confirm('Delete task "' + t.title.replace(/\"/g,'') + '"?');
+      if(!ok) return;
+      tasks = tasks.filter(x=>x.id!==id);
+      save(); render();
+    }
+
+    function moveTask(id, dir){
+      const idx = tasks.findIndex(x=>x.id===id); if(idx === -1) return;
+      const newIdx = idx + dir; if(newIdx < 0 || newIdx >= tasks.length) return;
+      const arr = tasks.slice(); const [a] = arr.splice(idx,1); arr.splice(newIdx,0,a); tasks = arr; save(); render();
+    }
+
+    function cyclePriority(p){ return p === 'High' ? 'Medium' : p === 'Medium' ? 'Low' : 'High'; }
+
+    // small debounce
+    function debounce(fn, wait=250){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn.apply(this,args), wait); } }
+
+    // accessibility: allow clearing storage with long-press of footer (dev)
+    document.querySelector('footer').addEventListener('dblclick', ()=>{
+      if(confirm('Clear all tasks and localStorage?')){ localStorage.removeItem(STORAGE_KEY); tasks = []; render(); }
+    });
+
+    // expose simple API to console for testing
+    window._taskManager = {add: task=>{ tasks.unshift(task); save(); render(); }, get: ()=>tasks };
+  </script>
+</body>
+</html>

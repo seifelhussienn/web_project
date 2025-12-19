@@ -1,0 +1,84 @@
+body{
+                color: red;
+            background-color:rgb(255, 255, 255);
+            font-size: 20px;
+            }
+            h2{
+                color: brown;
+                text-decoration: underline wavy;
+                font-size: 80%;
+                            font-style: italic;
+                            font-family: Arial, Helvetica, sans-serif;
+                            font-variant: small-caps;
+                            font-weight: 900;
+                            color: rgb(0, 4, 255);
+                            padding: 20px 30px 50px 20px;
+                            margin: 40px 20px 25px 15px;
+                            /* margin-top: ;
+                            margin-right: ;
+                            margin-bottom: ;
+                            margin-left: ; */
+            }
+            .cls0{
+                font-weight: 700;
+                color: black;
+            }
+            .ul{
+                color: black;
+            }
+            .hh{
+                color: aquamarine;
+            }
+            a:link{
+                color: green;
+                text-decoration: none;
+            }
+            a:visited{
+                color: red;
+            }
+            a:hover{
+                color: blue;
+                font-size: 21px;
+            }
+            a:active{
+                color: brown;
+                text-decoration: underline;
+            }
+            body{
+                background-image: url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRUawjGFW5hXeA_HMR1wkU4r1Lw2nNUpbvoLQ&s);
+                background-repeat: no-repeat;
+                background-size: cover;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            #se{
+                color: blueviolet;
+                border: solid;
+                padding: 40px;
+            }
+            h3{
+                display: inline;
+            }
+            code{
+                visibility: hidden;
+            }
+            .overflow{
+                border: double black 8px;
+                color: white;
+                width: 300px;
+                height: 200px;
+                overflow: scroll;
+            
+            }
+            .cont{
+                background-color: white;
+                display: inline-flex;
+                margin: 7px;
+                /* flex-direction: row;
+                flex-wrap: wrap; */
+                flex-flow: row wrap-reverse;
+                padding: 10px;
+            }
+            .cont div{
+                background-color: rgb(255, 255, 255);
+                margin: 7px;
+            }
